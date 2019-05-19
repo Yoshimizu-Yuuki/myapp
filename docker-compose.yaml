@@ -1,0 +1,56 @@
+version: '3.7'
+
+services:
+
+# front-end
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    command: npm start
+    volumes:
+      - ${ROOT_PATH}/app:/app
+    ports:
+      - 3030:3000
+    depends_on:
+      - nginx
+
+# #back-end
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    volumes:
+      - ${ROOT_PATH}/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - api
+
+# #php-fpm(alpine-php7.3) & laravel(5.8)
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    volumes:
+     - ${ROOT_PATH}/api:/var/www/html/api #laravel use
+     - ${ROOT_PATH}/phpfpm/etc:/usr/local/etc #use
+    # ports:
+    #   - 9000:9000
+    # depends_on:
+    #   - db
+
+# #mariadb
+  db:
+    image: mariadb:10.4
+    restart: always
+    volumes:
+      - ${ROOT_PATH}/mysql/var/mysql:/var/lib/mysql:delegated  #sqlinstance
+    volumes:
+      - ${ROOT_PATH}/mysql/etc/mysql:/etc/mysql  #sqlinstance
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: mysql
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+    ports:
+      - 13306:3306
